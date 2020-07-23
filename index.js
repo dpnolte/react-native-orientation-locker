@@ -1,2 +1,2 @@
 import Orientation from "./Orientation";
-export Orientation;
+export default Orientation;
