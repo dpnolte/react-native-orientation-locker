@@ -13,6 +13,13 @@ A react-native module that can listen on orientation changing of device, get cur
 <details>
   <summary>ChangeLog details</summary>
 
+v1.2.0
+1. Add support for lockAllOrientationsButUpsideDown
+2. Ignore on web and desktop (#115)
+3. Fix for not finding @ReactModule (#125)
+4. Fix unlockAllOrientations on Android (#133)
+5. Implement ActivityLifecycleCallbacks on Android (#131)
+
 v1.1.8
 1. Support FACE-UP and FACE-DOWN on iOS
 
@@ -153,7 +160,7 @@ Add following to MainApplication.java
 ```diff
 //...
 +import org.wonday.orientation.OrientationPackage;
-
++import org.wonday.orientation.OrientationActivityLifecycle;
     @Override
     protected List<ReactPackage> getPackages() {
       @SuppressWarnings("UnnecessaryLocalVariable")
@@ -164,9 +171,17 @@ Add following to MainApplication.java
       return packages;
     }
 //...
+
+  @Override
+  public void onCreate() {
+    ...
++    registerActivityLifecycleCallbacks(OrientationActivityLifecycle.getInstance());
+  }
 ```
 
 ## Usage
+
+### Imperative API
 
 Whenever you want to use it within React Native code now you can:
 `import Orientation from 'react-native-orientation-locker';`
@@ -224,6 +239,38 @@ import Orientation from 'react-native-orientation-locker';
   componentWillUnmount: function() {
     Orientation.removeOrientationListener(this._onOrientationDidChange);
   }
+```
+
+### Reactive component `<ScreenOrientation>`
+
+It is possible to have multiple `ScreenOrientation` components mounted at the same time. The props will be merged in the order the `ScreenOrientation` components were mounted.
+
+```js
+import React, { useState } from "react";
+import { Text, View } from "react-native";
+import ScreenOrientation, { PORTRAIT, LANDSCAPE } from "react-native-orientation-locker/ScreenOrientation";
+
+export default function App() {
+  const [showVideo, setShowVideo] = useState(true);
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ScreenOrientation
+        orientation={PORTRAIT}
+        onChange={orientation => console.log('onChange', orientation)}
+        onDeviceChange={orientation => console.log('onDeviceChange', orientation)}
+      />
+      <Button title="Toggle Video" onPress={() => setShowVideo(!showVideo)} />
+      {showVideo && (
+        <View>
+          <ScreenOrientation orientation={LANDSCAPE} />
+          <View style={{ width: 320, height: 180, backgroundColor: '#ccc' }}>
+            <Text>Landscape video goes here</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
 ```
 
 ## Events

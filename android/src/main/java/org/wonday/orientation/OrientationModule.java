@@ -15,11 +15,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.view.OrientationEventListener;
+import android.hardware.SensorManager;
 import android.view.Display;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.WindowManager;
-import android.hardware.SensorManager;
 
 import com.facebook.common.logging.FLog;
 import com.facebook.react.bridge.Arguments;
@@ -39,7 +39,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 @ReactModule(name = "Orientation")
-public class OrientationModule extends ReactContextBaseJavaModule implements LifecycleEventListener{
+public class OrientationModule extends ReactContextBaseJavaModule implements OrientationListeners {
 
     final BroadcastReceiver mReceiver;
     final OrientationEventListener mOrientationListener;
@@ -47,7 +47,6 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     private boolean isLocked = false;
     private String lastOrientationValue = "";
     private String lastDeviceOrientationValue = "";
-
 
     public OrientationModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -119,8 +118,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
 
             }
         };
-
-        ctx.addLifecycleEventListener(this);
+        OrientationActivityLifecycle.getInstance().registerListeners(this);
     }
 
     @Override
@@ -296,7 +294,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
 
         final Activity activity = getCurrentActivity();
         if (activity == null) return;
-        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         isLocked = false;
 
         //force send an UI orientation event when unlock
@@ -339,7 +337,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     }
 
     @Override
-    public void onHostResume() {
+    public void start() {
         FLog.i(ReactConstants.TAG, "orientation detect enabled.");
         mOrientationListener.enable();
 
@@ -347,8 +345,9 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
         if (activity == null) return;
         activity.registerReceiver(mReceiver, new IntentFilter("onConfigurationChanged"));
     }
+
     @Override
-    public void onHostPause() {
+    public void stop() {
         FLog.d(ReactConstants.TAG, "orientation detect disabled.");
         mOrientationListener.disable();
 
@@ -364,7 +363,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     }
 
     @Override
-    public void onHostDestroy() {
+    public void release() {
         FLog.d(ReactConstants.TAG, "orientation detect disabled.");
         mOrientationListener.disable();
 
